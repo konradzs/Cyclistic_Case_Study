@@ -1,0 +1,302 @@
+-- Checked for whitespaces in all string type columns:
+
+SELECT ride_id, rideable_type, day_of_week, month_start, start_station_name, start_station_id, end_station_name, end_station_id, member_casual
+FROM `cyclisticdb.trip_data`
+WHERE ride_id LIKE ' %' OR ride_id LIKE '% '
+OR rideable_type LIKE ' %' OR rideable_type LIKE '% '
+OR day_of_week LIKE ' %' OR day_of_week LIKE '% '
+OR month_start LIKE ' %' OR month_start LIKE '% '
+OR start_station_name LIKE ' %' OR start_station_name LIKE '% '
+OR start_station_id LIKE ' %' OR start_station_id LIKE '% '
+OR end_station_name LIKE ' %' OR end_station_name LIKE '% '
+OR end_station_id LIKE ' %' OR end_station_id LIKE '% '
+OR member_casual LIKE ' %' OR member_casual LIKE '% ';
+
+-- Updated the strings with a whitespace to correct value:
+
+UPDATE cyclisticdb.trip_data 
+SET start_station_name = 'Rockwell Ave & Touhy Ave'
+WHERE start_station_name LIKE ' %' OR start_station_name LIKE '% ';
+
+UPDATE cyclisticdb.trip_data 
+SET end_station_name = 'Rockwell Ave & Touhy Ave'
+WHERE end_station_name LIKE ' %' OR end_station_name LIKE '% ';
+
+-- Double checked for misspellings in rideable_type and member_casual:
+
+SELECT rideable_type, COUNT(rideable_type)
+FROM `cyclisticdb.trip_data`
+GROUP BY rideable_type;
+
+SELECT member_casual, COUNT(member_casual)
+FROM `cyclisticdb.trip_data`
+GROUP BY member_casual;
+
+-- Double checked for rides with negative timestamps
+
+SELECT TIMESTAMP_DIFF(ended_at, started_at, DAY), started_At, ended_at 
+FROM `cyclisticdb.trip_data`
+WHERE TIMESTAMP_DIFF(ended_at, started_at, DAY) < 0;
+
+SELECT ride_length, started_at, ended_at
+FROM `cyclisticdb.trip_data`
+WHERE ended_at < started_at;
+
+-- Deleted rows that include the word "test" (resulted in 790 + 513 rows deleted):
+
+DELETE 
+FROM cyclisticdb.trip_data
+WHERE start_station_id IN 
+(SELECT start_station_id
+FROM cyclisticdb.trip_data
+WHERE LOWER(start_station_id) LIKE '%test%');
+
+DELETE 
+FROM cyclisticdb.trip_data
+WHERE end_station_id IN 
+(SELECT end_station_id
+FROM cyclisticdb.trip_data
+WHERE LOWER(end_station_id) LIKE '%test%');
+
+-- Selected duplicates of ride_id to check if they are truly duplicate rows (Which they were not. It was just a formatting issue with the ride_id values for some strings that were considered "scientific numbers, so we need to update them as followed)
+
+SELECT s1.ride_id, s1.started_at, s1.ended_at, s1.month_start
+FROM `cyclisticdb.trip_data` AS s1
+INNER JOIN (
+  SELECT ride_id, COUNT(ride_id) as num_row
+  FROM `cyclisticdb.trip_data`
+  GROUP BY ride_id
+  HAVING COUNT(ride_id)>1
+) AS s2
+ON s2.ride_id = s1.ride_id;
+
+-- updated the first instance of duplicated ride_id's by adding "A" at the end (I chose the month as the 'WHERE' condition just for it's simplicity of typing speed):
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '5.27E+19A'
+WHERE ride_id = '5.27E+19' AND month_start = 'March';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '8.01E+19A'
+WHERE ride_id = '8.01E+19' AND month_start = 'June';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '3.89E+36A'
+WHERE ride_id = '3.89E+36' AND month_start = 'June';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '2.58E+97A'
+WHERE ride_id = '2.58E+97' AND month_start = 'July';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '7.67E+19A'
+WHERE ride_id = '7.67E+19' AND month_start = 'June';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '7.33E+14A'
+WHERE ride_id = '7.33E+14' AND month_start = 'July';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '5.58E+17A'
+WHERE ride_id = '5.58E+17' AND month_start = 'August';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '7.26933E+15A'
+WHERE ride_id = '7.26933E+15' AND month_start = 'April';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '1.98008E+15A'
+WHERE ride_id = '1.98008E+15' AND month_start = 'October';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '8.16E+30A'
+WHERE ride_id = '8.16E+30' AND month_start = 'August';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '7.24E+96A'
+WHERE ride_id = '7.24E+96' AND month_start = 'November';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '1.56E+21A'
+WHERE ride_id = '1.56E+21' AND month_start = 'August';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '9.52266E+15A'
+WHERE ride_id = '9.52266E+15' AND month_start = 'October';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '5.03E+14A'
+WHERE ride_id = '5.03E+14' AND month_start = 'June';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '3.32092E+15A'
+WHERE ride_id = '3.32092E+15' AND month_start = 'September';
+
+UPDATE cyclisticdb.trip_data
+SET ride_id = '4.89E+17A'
+WHERE ride_id = '4.89E+17' AND month_start = 'December';
+
+-- IF we were to delete all the "duplicate" id values to avoid inputing id's that don't match our database:
+
+-- DELETE
+-- FROM cyclisticdb.trip_data
+-- WHERE ride_id IN(
+-- SELECT ride_id
+-- FROM (
+-- SELECT 
+--  ride_id,  
+--     ROW_NUMBER() OVER ( 
+--    PARTITION BY ride_id 
+--         ORDER BY ride_id
+--  ) AS row_num 
+-- FROM cyclisticdb.trip_data)
+
+-- WHERE row_num > 1
+-- );
+
+
+
+Followed by doing simple calculations just to understand what we were working with:
+
+-- Calculated the longest bike ride (roughly 38 days)
+
+SELECT MAX(full_ride_length)
+FROM cyclisticdb.trip_data_added_columns;
+
+-- Calculated the mean of ride_length from the table with values with less than 24h long rides (00:18:30):
+
+SELECT AVG(full_ride_length)
+FROM cyclisticdb.trip_data_clean;
+
+-- Calculated the mean of ride_length for all values (00:20:28):
+
+SELECT AVG(full_ride_length)
+FROM cyclisticdb.trip_data_added_columns;
+
+-- Calculated the mean of ride_length for member type (00:25:40, 00:12:56 for members)
+
+SELECT AVG(full_ride_length), member_casual
+FROM cyclisticdb.trip_data_clean
+GROUP BY member_casual;
+
+-- Calculated the mean of ride_length per rideable_type (00:15:10 electric, 00:18:20 classic, 00:49:32 docked)
+
+SELECT AVG(full_ride_length), rideable_type
+FROM cyclisticdb.trip_data_clean
+GROUP BY rideable_type;
+
+-- Calculated the mean of ride_length per day_of_week (Monday 00:17:50, Tuesday 00:16:00, Wednesday 00:15:55, Thursday 00:16:18, Friday 00:17:41, Saturday 00:22:03, Sunday 00:22:40)
+
+SELECT AVG(full_ride_length), day_of_week
+FROM cyclisticdb.trip_data_clean
+GROUP BY day_of_week;
+
+-- Calculated number or rides per day of week
+
+SELECT COUNT(day_of_week), day_of_week
+FROM cyclisticdb.trip_data_clean
+GROUP BY day_of_week;
+
+-- Calculated number or rides per rideable_type
+
+SELECT COUNT(rideable_type), rideable_type
+FROM cyclisticdb.trip_data_clean
+GROUP BY rideable_type;
+
+-- Calculated mode of day of week and the value:
+
+SELECT day_of_week, COUNT(day_of_week)
+FROM cyclisticdb.trip_data_clean
+GROUP  BY day_of_week
+ORDER  BY COUNT(day_of_week) DESC LIMIT 1;
+
+-- Calculated the type of preffered bike by member type
+
+SELECT member_casual, COUNT(rideable_type), rideable_type
+FROM cyclisticdb.trip_data_clean
+GROUP BY member_casual, rideable_type;
+
+-- Calculated the ride duration by day of the week per member type
+
+SELECT member_casual,
+day_of_week,
+ROUND(AVG(DATE_DIFF(ended_at, started_at, minute)),2) AS avg_ride_duration
+FROM cyclisticdb.trip_data_clean
+GROUP BY member_casual, day_of_week
+ORDER BY member_casual;
+
+-- Calculated the initial station per member type per week day:
+
+SELECT COUNT(start_station_name) AS count_of_start, start_station_name, member_casual, day_of_week
+FROM cyclisticdb.trip_data_clean
+GROUP BY start_station_name, member_casual, day_of_week
+ORDER BY COUNT(start_station_name) DESC;
+
+Finished by creating new tables and joining with extra data:
+
+
+-- Created a new table with 2 added new columns (ride length with year month days, and the timestamp difference of days between beginning and end of the ride). With the objective of selective rides that are too long and too short:
+
+
+CREATE TABLE cyclisticdb.trip_data_added_columns
+AS SELECT *, (ended_at - started_at) AS full_ride_length, TIMESTAMP_DIFF(ended_at, started_at, day) AS duration_of_day, TRUNC(start_lat, 4) AS start_lat_t, TRUNC(start_lng, 4) AS start_lng_t, TRUNC(end_lat, 4) AS end_lat_t, TRUNC(end_lng, 4) AS end_lng_t 
+FROM cyclisticdb.trip_data;
+
+-- Created a table with a safe copy of our data:
+
+CREATE TABLE cyclisticdb.trip_data_clean
+AS SELECT * 
+FROM cyclisticdb.trip_data_added_columns;
+
+-- Selected and deleted rides that have length over 24h:
+
+SELECT duration_of_day, started_at, ended_at, ride_length, full_ride_length
+FROM cyclisticdb.trip_data_clean
+WHERE duration_of_day > 0
+ORDER BY full_ride_length;
+
+DELETE 
+FROM cyclisticdb.trip_data_clean
+WHERE duration_of_day > 0;
+
+
+-- Understood how many of the very short rides are made by members and how many are casual riders:
+
+SELECT COUNT(member_casual), member_casual
+FROM cyclisticdb.trip_data_clean
+WHERE start_station_id = end_station_id
+AND ROUND(start_lat, 3) = ROUND(end_lat, 3) AND ROUND(start_lng, 3) = ROUND(end_lng, 3)
+AND LENGTH(CAST(start_lat AS STRING))>5 
+AND ride_length <= "00:01:00"
+GROUP BY member_casual;
+
+-- Concluded that many short rides were made by members, that don't need to think twice when grabbing a bike for a mistake
+
+-- Deleted the values for extremely short rides with little to no movement (consider they were tests or errors):
+
+DELETE 
+FROM cyclisticdb.trip_data_clean
+WHERE start_station_id = end_station_id
+AND ROUND(start_lat, 3) = ROUND(end_lat, 3) AND ROUND(start_lng, 3) = ROUND(end_lng, 3)
+AND LENGTH(CAST(start_lat AS STRING))>5 
+AND ride_length <= "00:01:00";
+
+
+-- Created a new table where I join my clean table with the weather data from chicago in the months of study. (Data was taken from this website:https://www.weather.gov/wrh/Climate?wfo=lot)
+
+CREATE TABLE cyclisticdb.trip_data_clean_weather
+AS SELECT trip_data_clean.*, temp.Maximum, temp.Minimum, temp.Average, temp.Precipitation, temp.New_Snow, temp.Snow_Depth
+FROM cyclisticdb.trip_data_clean
+LEFT JOIN cyclisticdb.chicago_weather AS temp
+ON start_date = temp.date; 
+
+-- Exported my table to begin the analysing phase. It was exported to severeral CSV files since it was to large:
+
+EXPORT DATA OPTIONS (
+  uri = 'gs://bigquery_export_demo/file*.csv',
+  format='CSV', -- {JSON | PARQUET | AVRO | CSV}
+  overwrite=true,
+  header=true,
+  field_delimiter=','
+) AS
+SELECT * FROM `cyclisticdb.trip_data_clean_weather`;
